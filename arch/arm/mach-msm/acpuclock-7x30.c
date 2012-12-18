@@ -345,14 +345,6 @@ static unsigned long acpuclk_7x30_get_rate(int cpu)
 		return 0;
 }
 
-
-unsigned long clk_get_max_axi_khz(void)
-{
-	return MAX_AXI_KHZ;
-}
-EXPORT_SYMBOL(clk_get_max_axi_khz);
-
-
 /*----------------------------------------------------------------------------
  * Clock driver initialization
  *---------------------------------------------------------------------------*/
