@@ -558,19 +558,24 @@ void __init pll2_fixup(void)
 {
 	struct clkctl_acpu_speed *speed = acpu_freq_tbl;
 
-	//u8 pll2_l = readl_relaxed(PLL2_L_VAL_ADDR) & 0xFF;
+	u8 pll2_l = readl_relaxed(PLL2_L_VAL_ADDR) & 0xFF; //da togliere
 
 
 	for ( ; speed->acpu_clk_khz; speed++) {
 		if (speed->src != PLL_2)
 			backup_s = speed;
 
+
 /*
+=======
+//da togliere inizio
+>>>>>>> 533b1ed... Added VDD Level sysfs interface
 		if (speed->pll_rate && speed->pll_rate->l == pll2_l) {
 			speed++;
 			speed->acpu_clk_khz = 0;
 			return;
 		}
+
 */
 	}
 /*
@@ -581,6 +586,13 @@ void __init pll2_fixup(void)
 	}
 
 
+
+//da togliere fine
+	}
+
+	pr_err("Unknown PLL2 lval %d\n", pll2_l); //da togliere
+	BUG(); //da togliere
+>>>>>>> 533b1ed... Added VDD Level sysfs interface
 }
 
 #define RPM_BYPASS_MASK	(1 << 3)
@@ -608,6 +620,21 @@ void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 			drv_state.current_speed->acpu_clk_khz);
 	
 }
+
+
+/*
+	for (s = acpu_freq_tbl; s->acpu_clk_khz != 1209600; s++);
+	acpuclk_set_rate(0, s->acpu_clk_khz, SETRATE_CPUFREQ);
+	pr_info("ACPU init done, clock rate now : %d\n",
+			drv_state.current_speed->acpu_clk_khz);
+*/
+	return 0;
+}
+
+struct acpuclk_soc_data acpuclk_7x30_soc_data __initdata = {
+	.init = acpuclk_7x30_init,
+};
+
 
 #ifdef CONFIG_CPU_FREQ_VDD_LEVELS
 ssize_t acpuclk_get_vdd_levels_str(char *buf)
