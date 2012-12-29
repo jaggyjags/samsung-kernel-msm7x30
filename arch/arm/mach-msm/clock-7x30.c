@@ -2310,6 +2310,8 @@ static struct branch_clk lpa_core_clk = {
 	},
 };
 
+
+
 static DEFINE_CLK_PCOM(adsp_clk, ADSP_CLK, CLKFLAG_SKIP_AUTO_OFF);
 static DEFINE_CLK_PCOM(codec_ssbi_clk,	CODEC_SSBI_CLK, CLKFLAG_SKIP_AUTO_OFF);
 static DEFINE_CLK_PCOM(ebi1_clk, EBI1_CLK, CLKFLAG_SKIP_AUTO_OFF | CLKFLAG_MIN);
@@ -2802,6 +2804,7 @@ static struct clk_local_ownership {
 	{ CLK_LOOKUP("mem_clk",		ebi_vcd_clk.c,	"msm_vidc.0") },
 	{ CLK_LOOKUP("ebi1_vfe_clk",	ebi_vfe_clk.c,	NULL) },
 	{ CLK_LOOKUP("mem_clk",		ebi_adm_clk.c,	"msm_dmov") },
+
 
 	/*
 	 * This is a many-to-one mapping because we don't know how the remote
