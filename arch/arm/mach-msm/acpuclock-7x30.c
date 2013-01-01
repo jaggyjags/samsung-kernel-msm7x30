@@ -31,6 +31,8 @@
 
 #include "smd_private.h"
 #include "clock.h"
+#include "clock-local.h"
+#include "clock-7x30.h"
 #include "acpuclock.h"
 #include "spm.h"
 
@@ -56,11 +58,13 @@
 #define SEMC_ACPU_MAX_UV_MV 1450U
 
 extern int charging_boot;
-#define LPM_LOW_CPU_CLK 245760
+#define LPM_LOW_CPU_CLK 1209600
 
 struct clock_state {
 	struct clkctl_acpu_speed	*current_speed;
 	struct mutex			lock;
+	uint32_t			acpu_switch_time_us;
+	uint32_t			vdd_switch_time_us;
 	struct clk			*ebi1_clk;
 };
 
@@ -90,15 +94,9 @@ static struct clock_state drv_state = { 0 };
 static struct clkctl_acpu_speed *backup_s;
 
 static struct pll pll2_tbl[] = {
-<<<<<<< HEAD
 	{42, 0, 1, 0 }, 	/*  806 MHz */
 	{53, 1, 3, 0 }, 	/* 1024 MHz */
   	{58, 1, 3, 0 },     /* 1113 MHz */
-=======
-	{42, 0, 1, 0 },		/*  806 MHz */
-	{53, 1, 3, 0 },		/* 1024 MHz */
-	{58, 1, 3, 0 },     /* 1113 MHz */
->>>>>>> castagna/ics-3.0-cit
 /*	{125,0, 1, 1 }, 	/  1200 MHz */
 	{63, 1, 3, 0 },     /* 1209 MHz */
   	{68, 1, 3, 0 },     /* 1305 MHz */
@@ -107,26 +105,12 @@ static struct pll pll2_tbl[] = {
 	{83, 1, 3, 0 },		/* 1612 MHz */
 	{88, 1, 3, 0 },		/* 1708 MHz */
 	{93, 1, 3, 0 },		/* 1804 MHz */
-<<<<<<< HEAD
-=======
-/*	{98, 1, 3, 0 },     /  1881 MHz */
->>>>>>> castagna/ics-3.0-cit
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_OVERCLOCKING
+	{97, 1, 3, 0 },     /* 1862 MHz */
+#endif
 };
 
 /* Use negative numbers for sources that can't be enabled/disabled */
-
-enum acpuclk_source {
-	LPXO	= -2,
-	AXI	= -1,
-	PLL_0	=  0,
-	PLL_1,
-	PLL_2,
-	PLL_3,
-	MAX_SOURCE
-};
-
-static struct clk *acpuclk_sources[MAX_SOURCE];
-
 #define SRC_LPXO (-2)
 #define SRC_AXI  (-1)
 /*
@@ -134,9 +118,40 @@ static struct clk *acpuclk_sources[MAX_SOURCE];
  * that is implicitly met by voting for a specific minimum AXI frequency.
  * Do NOT change the AXI frequency unless you are _absoulutely_ sure you
  * know all the h/w requirements.
- */
-<<<<<<< HEAD
+ */ 
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_UV
 
+static struct clkctl_acpu_speed acpu_freq_tbl[] = {
+	{ 0, 24576,  SRC_LPXO, 0, 0,  30720000,  750, VDD_RAW(750) },
+	{ 0, 61440,  PLL_3,    5, 11, 61440000,  750, VDD_RAW(750) },
+	{ 0, 122880, PLL_3,    5, 5,  61440000,  750, VDD_RAW(750) },
+	{ 0, 184320, PLL_3,    5, 4,  61440000,  750, VDD_RAW(750) },
+	{ 1, MAX_AXI_KHZ, SRC_AXI, 1, 0, 61440000, 750, VDD_RAW(750) },
+	{ 1, 245760, PLL_3,    5, 2,  61440000,  750, VDD_RAW(750) },
+	{ 1, 368640, PLL_3,    5, 1,  122800000, 800, VDD_RAW(800) },
+	/* AXI has MSMC1 implications. See above. */
+	{ 1, 768000, PLL_1,    2, 0,  153600000, 925, VDD_RAW(925) },
+	/*
+	 * AXI has MSMC1 implications. See above.
+	 */
+	{ 1, 806400,  PLL_2, 3, 0, UINT_MAX, 950, VDD_RAW(950), &pll2_tbl[0]},
+	{ 1, 1024000, PLL_2, 3, 0, UINT_MAX, 1000, VDD_RAW(1000), &pll2_tbl[1]},
+	{ 1, 1113600, PLL_2, 3, 0, UINT_MAX, 1025, VDD_RAW(1025), &pll2_tbl[2]},
+	{ 1, 1209600, PLL_2, 3, 0, UINT_MAX, 1050, VDD_RAW(1050), &pll2_tbl[3]},
+	{ 1, 1305600, PLL_2, 3, 0, UINT_MAX, 1075, VDD_RAW(1075), &pll2_tbl[4]},
+	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1100, VDD_RAW(1100), &pll2_tbl[5]},
+#ifdef CONFIG_MSM_CPU_FREQ_OVERCLOCKING
+	{ 1, 1516800, PLL_2, 3, 0, UINT_MAX, 1150, VDD_RAW(1150), &pll2_tbl[6]},
+	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[7]},
+	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[8]},
+	{ 1, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_OVERCLOCKING
+	{ 1, 1862400, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#endif
+#endif
+	{ 0 }
+};
+#else
 
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 0, 24576,  SRC_LPXO, 0, 0,  30720000,  800, VDD_RAW(800) },
@@ -157,74 +172,35 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 1, 1209600, PLL_2, 3, 0, UINT_MAX, 1150, VDD_RAW(1150), &pll2_tbl[3]},
 	{ 1, 1305600, PLL_2, 3, 0, UINT_MAX, 1175, VDD_RAW(1175), &pll2_tbl[4]},
 	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[5]},
-	{ 1, 1516800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[6]},
-	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1275, VDD_RAW(1275), &pll2_tbl[7]},
-	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1300, VDD_RAW(1300), &pll2_tbl[8]},
-	{ 1, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
-=======
-#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_UV
-
-static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-	{ 0, 24576,  LPXO,	   0, 0,  30720000,  750, VDD_RAW(750) },
-	{ 0, 61440,  PLL_3,    5, 11, 61440000,  750, VDD_RAW(750) },
-	{ 0, 122880, PLL_3,    5, 5,  61440000,  750, VDD_RAW(750) },
-	{ 1, 184320, PLL_3,    5, 4,  61440000,  750, VDD_RAW(750) },
-	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  750, VDD_RAW(750) },
-	{ 1, 245760, PLL_3,    5, 2,  61440000,  750, VDD_RAW(750) },
-	{ 1, 368640, PLL_3,    5, 1,  122800000, 800, VDD_RAW(800) },
-	/* AXI has MSMC1 implications. See above. */
-	{ 1, 768000, PLL_1,    2, 0,  153600000, 925, VDD_RAW(925) },
-	/*
-	 * AXI has MSMC1 implications. See above.
-	 */
-	{ 1, 806400,  PLL_2, 3, 0, UINT_MAX, 950, VDD_RAW(950), &pll2_tbl[0]},
-	{ 1, 1024000, PLL_2, 3, 0, UINT_MAX, 1000, VDD_RAW(1000), &pll2_tbl[1]},
-	{ 1, 1113600, PLL_2, 3, 0, UINT_MAX, 1025, VDD_RAW(1025), &pll2_tbl[2]},
-	{ 1, 1209600, PLL_2, 3, 0, UINT_MAX, 1050, VDD_RAW(1050), &pll2_tbl[3]},
-	{ 1, 1305600, PLL_2, 3, 0, UINT_MAX, 1075, VDD_RAW(1075), &pll2_tbl[4]},
-	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1100, VDD_RAW(1100), &pll2_tbl[5]},
-#ifdef CONFIG_MSM_CPU_FREQ_OVERCLOCKING
-	{ 1, 1516800, PLL_2, 3, 0, UINT_MAX, 1150, VDD_RAW(1150), &pll2_tbl[6]},
-	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[7]},
-	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[8]},
-	{ 1, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
-	//{ 1, 1881600, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
-#endif
->>>>>>> castagna/ics-3.0-cit
-	{ 0 }
-};
-#else
-
-static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-	{ 0, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
-	{ 0, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
-	{ 0, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
-	{ 1, 184320, PLL_3,    5, 4,  61440000,  800, VDD_RAW(800) },
-	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  800, VDD_RAW(800) },
-	{ 1, 245760, PLL_3,    5, 2,  61440000,  800, VDD_RAW(800) },
-	{ 1, 368640, PLL_3,    5, 1,  122800000, 850, VDD_RAW(850) },
-	/* AXI has MSMC1 implications. See above. */
-	{ 1, 768000, PLL_1,    2, 0,  153600000, 1000, VDD_RAW(1000) },
-	/*
-	 * AXI has MSMC1 implications. See above.
-	 */
-	{ 1, 806400,  PLL_2, 3, 0, UINT_MAX, 1025, VDD_RAW(1025), &pll2_tbl[0]},
-	{ 1, 1024000, PLL_2, 3, 0, UINT_MAX, 1100, VDD_RAW(1100), &pll2_tbl[1]},
-	{ 1, 1113600, PLL_2, 3, 0, UINT_MAX, 1125, VDD_RAW(1125), &pll2_tbl[2]},
-	{ 1, 1209600, PLL_2, 3, 0, UINT_MAX, 1150, VDD_RAW(1150), &pll2_tbl[3]},
-	{ 1, 1305600, PLL_2, 3, 0, UINT_MAX, 1175, VDD_RAW(1175), &pll2_tbl[4]},
-	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[5]},
 #ifdef CONFIG_MSM_CPU_FREQ_OVERCLOCKING
 	{ 1, 1516800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[6]},
 	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1275, VDD_RAW(1275), &pll2_tbl[7]},
 	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1300, VDD_RAW(1300), &pll2_tbl[8]},
 	{ 1, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
-	//{ 1, 1881600, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_OVERCLOCKING
+	{ 1, 1862400, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#endif
 #endif
 	{ 0 }
 };
 #endif
 
+
+#define POWER_COLLAPSE_KHZ MAX_AXI_KHZ
+unsigned long acpuclk_power_collapse(void)
+{
+	int ret = acpuclk_get_rate(smp_processor_id());
+	acpuclk_set_rate(smp_processor_id(), POWER_COLLAPSE_KHZ, SETRATE_PC);
+	return ret;
+}
+
+#define WAIT_FOR_IRQ_KHZ MAX_AXI_KHZ
+unsigned long acpuclk_wait_for_irq(void)
+{
+	int ret = acpuclk_get_rate(smp_processor_id());
+	acpuclk_set_rate(smp_processor_id(), WAIT_FOR_IRQ_KHZ, SETRATE_SWFI);
+	return ret;
+}
 
 /* Function for Ancora devices */
 #define MAX_CLK 1401600
@@ -234,6 +210,7 @@ unsigned long acpuclk_usr_set_max(void)
 	acpuclk_set_rate(smp_processor_id(), MAX_CLK, SETRATE_CPUFREQ);
 	return ret;
 }
+/* End function for Ancora devices */
 
 static int acpuclk_set_acpu_vdd(struct clkctl_acpu_speed *s)
 {
@@ -242,26 +219,26 @@ static int acpuclk_set_acpu_vdd(struct clkctl_acpu_speed *s)
 		return ret;
 
 	/* Wait for voltage to stabilize. */
-	udelay(62);
+	udelay(drv_state.vdd_switch_time_us);
 	return 0;
 }
 
 /* Assumes PLL2 is off and the acpuclock isn't sourced from PLL2 */
 static void acpuclk_config_pll2(struct pll *pll)
 {
-	uint32_t config = readl_relaxed(PLL2_CONFIG_ADDR);
+	uint32_t config = readl(PLL2_CONFIG_ADDR);
 
 	/* Make sure write to disable PLL_2 has completed
 	 * before reconfiguring that PLL. */
 	mb();
-	writel_relaxed(pll->l, PLL2_L_VAL_ADDR);
-	writel_relaxed(pll->m, PLL2_M_VAL_ADDR);
-	writel_relaxed(pll->n, PLL2_N_VAL_ADDR);
+	writel(pll->l, PLL2_L_VAL_ADDR);
+	writel(pll->m, PLL2_M_VAL_ADDR);
+	writel(pll->n, PLL2_N_VAL_ADDR);
 	if (pll->pre_div)
 		config |= BIT(15);
 	else
 		config &= ~BIT(15);
-	writel_relaxed(config, PLL2_CONFIG_ADDR);
+	writel(config, PLL2_CONFIG_ADDR);
 	/* Make sure PLL is programmed before returning. */
 	mb();
 }
@@ -271,30 +248,29 @@ static void acpuclk_set_src(const struct clkctl_acpu_speed *s)
 {
 	uint32_t reg_clksel, reg_clkctl, src_sel;
 
-	reg_clksel = readl_relaxed(SCSS_CLK_SEL_ADDR);
+	reg_clksel = readl(SCSS_CLK_SEL_ADDR);
 
 	/* CLK_SEL_SRC1NO */
 	src_sel = reg_clksel & 1;
 
 	/* Program clock source and divider. */
-	reg_clkctl = readl_relaxed(SCSS_CLK_CTL_ADDR);
+	reg_clkctl = readl(SCSS_CLK_CTL_ADDR);
 	reg_clkctl &= ~(0xFF << (8 * src_sel));
 	reg_clkctl |= s->acpu_src_sel << (4 + 8 * src_sel);
 	reg_clkctl |= s->acpu_src_div << (0 + 8 * src_sel);
-	writel_relaxed(reg_clkctl, SCSS_CLK_CTL_ADDR);
+	writel(reg_clkctl, SCSS_CLK_CTL_ADDR);
 
 	/* Toggle clock source. */
 	reg_clksel ^= 1;
 
 	/* Program clock source selection. */
-	writel_relaxed(reg_clksel, SCSS_CLK_SEL_ADDR);
+	writel(reg_clksel, SCSS_CLK_SEL_ADDR);
 
 	/* Make sure switch to new source is complete. */
-	mb();
+	dsb();
 }
 
-static int acpuclk_7x30_set_rate(int cpu, unsigned long rate,
-				 enum setrate_reason reason)
+int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 {
 	struct clkctl_acpu_speed *tgt_s, *strt_s;
 	int res, rc = 0;
@@ -340,7 +316,8 @@ static int acpuclk_7x30_set_rate(int cpu, unsigned long rate,
 	 * increasing the ACPU frequency, since voting for high AXI rates
 	 * implicitly takes care of increasing the MSMC1 voltage, as needed. */
 	if (tgt_s->axi_clk_hz > strt_s->axi_clk_hz) {
-		rc = clk_set_rate(drv_state.ebi1_clk, tgt_s->axi_clk_hz);
+		rc = clk_set_min_rate(drv_state.ebi1_clk,
+					tgt_s->axi_clk_hz);
 		if (rc < 0) {
 			pr_err("Setting AXI min rate failed (%d)\n", rc);
 			goto out;
@@ -349,9 +326,9 @@ static int acpuclk_7x30_set_rate(int cpu, unsigned long rate,
 
 	/* Move off of PLL2 if we're reprogramming it */
 	if (tgt_s->src == PLL_2 && strt_s->src == PLL_2) {
-		clk_enable(acpuclk_sources[backup_s->src]);
+		local_src_enable(backup_s->src);
 		acpuclk_set_src(backup_s);
-		clk_disable(acpuclk_sources[strt_s->src]);
+		local_src_disable(PLL_2);
 	}
 
 	/* Reconfigure PLL2 if we're moving to it */
@@ -359,11 +336,11 @@ static int acpuclk_7x30_set_rate(int cpu, unsigned long rate,
 		acpuclk_config_pll2(tgt_s->pll_rate);
 
 	/* Make sure target PLL is on. */
-	if ((strt_s->src != tgt_s->src && tgt_s->src >= 0) ||
-	    (tgt_s->src == PLL_2 && strt_s->src == PLL_2)) {
+	if (strt_s->src != tgt_s->src && tgt_s->src >= 0) {
 		pr_debug("Enabling PLL %d\n", tgt_s->src);
-		clk_enable(acpuclk_sources[tgt_s->src]);
-	}
+		local_src_enable(tgt_s->src);
+	} else if (tgt_s->src == PLL_2 && strt_s->src == PLL_2)
+		local_src_enable(PLL_2);
 
 	/* Perform the frequency switch */
 	acpuclk_set_src(tgt_s);
@@ -371,7 +348,7 @@ static int acpuclk_7x30_set_rate(int cpu, unsigned long rate,
 	loops_per_jiffy = tgt_s->lpj;
 
 	if (tgt_s->src == PLL_2 && strt_s->src == PLL_2)
-		clk_disable(acpuclk_sources[backup_s->src]);
+		local_src_disable(backup_s->src);
 
 	/* Nothing else to do for SWFI. */
 	if (reason == SETRATE_SWFI)
@@ -380,12 +357,13 @@ static int acpuclk_7x30_set_rate(int cpu, unsigned long rate,
 	/* Turn off previous PLL if not used. */
 	if (strt_s->src != tgt_s->src && strt_s->src >= 0) {
 		pr_debug("Disabling PLL %d\n", strt_s->src);
-		clk_disable(acpuclk_sources[strt_s->src]);
+		local_src_disable(strt_s->src);
 	}
 
 	/* Decrease the AXI bus frequency if we can. */
 	if (tgt_s->axi_clk_hz < strt_s->axi_clk_hz) {
-		res = clk_set_rate(drv_state.ebi1_clk, tgt_s->axi_clk_hz);
+		res = clk_set_min_rate(drv_state.ebi1_clk,
+					tgt_s->axi_clk_hz);
 		if (res < 0)
 			pr_warning("Setting AXI min rate failed (%d)\n", res);
 	}
@@ -410,7 +388,7 @@ out:
 	return rc;
 }
 
-static unsigned long acpuclk_7x30_get_rate(int cpu)
+unsigned long acpuclk_get_rate(int cpu)
 {
 	WARN_ONCE(drv_state.current_speed == NULL,
 		  "acpuclk_get_rate: not initialized\n");
@@ -420,27 +398,39 @@ static unsigned long acpuclk_7x30_get_rate(int cpu)
 		return 0;
 }
 
+uint32_t acpuclk_get_switch_time(void)
+{
+	return drv_state.acpu_switch_time_us;
+}
+
+unsigned long clk_get_max_axi_khz(void)
+{
+	return MAX_AXI_KHZ;
+}
+EXPORT_SYMBOL(clk_get_max_axi_khz);
+
+
 /*----------------------------------------------------------------------------
  * Clock driver initialization
  *---------------------------------------------------------------------------*/
 
-static void __init acpuclk_hw_init(void)
+static void __init acpuclk_init(void)
 {
 	struct clkctl_acpu_speed *s;
 	uint32_t div, sel, src_num;
 	uint32_t reg_clksel, reg_clkctl;
 	int res;
-	u8 pll2_l = readl_relaxed(PLL2_L_VAL_ADDR) & 0xFF;
+	u8 pll2_l = readl(PLL2_L_VAL_ADDR) & 0xFF;
 
 	drv_state.ebi1_clk = clk_get(NULL, "ebi1_clk");
 	BUG_ON(IS_ERR(drv_state.ebi1_clk));
 
-	reg_clksel = readl_relaxed(SCSS_CLK_SEL_ADDR);
+	reg_clksel = readl(SCSS_CLK_SEL_ADDR);
 
 	/* Determine the ACPU clock rate. */
 	switch ((reg_clksel >> 1) & 0x3) {
 	case 0:	/* Running off the output of the raw clock source mux. */
-		reg_clkctl = readl_relaxed(SCSS_CLK_CTL_ADDR);
+		reg_clkctl = readl(SCSS_CLK_CTL_ADDR);
 		src_num = reg_clksel & 0x1;
 		sel = (reg_clkctl >> (12 - (8 * src_num))) & 0x7;
 		div = (reg_clkctl >> (8 -  (8 * src_num))) & 0xF;
@@ -466,9 +456,9 @@ static void __init acpuclk_hw_init(void)
 			acpuclk_set_src(s);
 
 			/* Switch to raw clock source input of the core mux. */
-			reg_clksel = readl_relaxed(SCSS_CLK_SEL_ADDR);
+			reg_clksel = readl(SCSS_CLK_SEL_ADDR);
 			reg_clksel &= ~(0x3 << 1);
-			writel_relaxed(reg_clksel, SCSS_CLK_SEL_ADDR);
+			writel(reg_clksel, SCSS_CLK_SEL_ADDR);
 			break;
 		}
 		/* else fall through */
@@ -490,9 +480,9 @@ static void __init acpuclk_hw_init(void)
 
 	/* Initialize current PLL's reference count. */
 	if (s->src >= 0)
-		clk_enable(acpuclk_sources[s->src]);
+		local_src_enable(s->src);
 
-	res = clk_set_rate(drv_state.ebi1_clk, s->axi_clk_hz);
+	res = clk_set_min_rate(drv_state.ebi1_clk, s->axi_clk_hz);
 	if (res < 0)
 		pr_warning("Setting AXI min rate failed!\n");
 
@@ -543,81 +533,40 @@ static inline void setup_cpufreq_table(void) { }
 void __init pll2_fixup(void)
 {
 	struct clkctl_acpu_speed *speed = acpu_freq_tbl;
-<<<<<<< HEAD
-=======
-	//u8 pll2_l = readl_relaxed(PLL2_L_VAL_ADDR) & 0xFF;
->>>>>>> castagna/ics-3.0-cit
 
 	for ( ; speed->acpu_clk_khz; speed++) {
 		if (speed->src != PLL_2)
 			backup_s = speed;
-<<<<<<< HEAD
 	}
 
 	//pr_err("Unknown PLL2 lval %d\n", pll2_l);	
-=======
-/*
-		if (speed->pll_rate && speed->pll_rate->l == pll2_l) {
-			speed++;
-			speed->acpu_clk_khz = 0;
-			return;
-		}
-*/
-	}
-/*
-	pr_err("Unknown PLL2 lval %d\n", pll2_l);
-	BUG();
-*/
->>>>>>> castagna/ics-3.0-cit
 }
 
 #define RPM_BYPASS_MASK	(1 << 3)
 #define PMIC_MODE_MASK	(1 << 4)
 
-static void __init populate_plls(void)
-{
-	acpuclk_sources[PLL_1] = clk_get_sys("acpu", "pll1_clk");
-	BUG_ON(IS_ERR(acpuclk_sources[PLL_1]));
-	acpuclk_sources[PLL_2] = clk_get_sys("acpu", "pll2_clk");
-	BUG_ON(IS_ERR(acpuclk_sources[PLL_2]));
-	acpuclk_sources[PLL_3] = clk_get_sys("acpu", "pll3_clk");
-	BUG_ON(IS_ERR(acpuclk_sources[PLL_3]));
-}
-
-static struct acpuclk_data acpuclk_7x30_data = {
-	.set_rate = acpuclk_7x30_set_rate,
-	.get_rate = acpuclk_7x30_get_rate,
-	.power_collapse_khz = MAX_AXI_KHZ,
-	.wait_for_irq_khz = MAX_AXI_KHZ,
-	.switch_time_us = 50,
-};
-
-static int __init acpuclk_7x30_init(struct acpuclk_soc_data *soc_data)
+void __init msm_acpu_clock_init(struct msm_acpu_clock_platform_data *clkdata)
 {
 	struct clkctl_acpu_speed *s;
-	
-	pr_info("%s()\n", __func__);
+
+	pr_info("acpu_clock_init()\n");
 
 	mutex_init(&drv_state.lock);
+	drv_state.acpu_switch_time_us = clkdata->acpu_switch_time_us;
+	drv_state.vdd_switch_time_us = clkdata->vdd_switch_time_us;
 	pll2_fixup();
-	populate_plls();
-	acpuclk_hw_init();
+	acpuclk_init();
 	lpj_init();
 	setup_cpufreq_table();
-	acpuclk_register(&acpuclk_7x30_data);
 
-
-	for (s = acpu_freq_tbl; s->acpu_clk_khz != 1209600; s++);
+	
+	for (s = acpu_freq_tbl; s->acpu_clk_khz != 1209600; s++)
+		;
 	acpuclk_set_rate(0, s->acpu_clk_khz, SETRATE_CPUFREQ);
 	pr_info("ACPU init done, clock rate now : %d\n",
 			drv_state.current_speed->acpu_clk_khz);
-
-	return 0;
+	
 }
-
-struct acpuclk_soc_data acpuclk_7x30_soc_data __initdata = {
-	.init = acpuclk_7x30_init,
-};
 
 #ifdef CONFIG_CPU_FREQ_VDD_LEVELS
 ssize_t acpuclk_get_vdd_levels_str(char *buf)
@@ -661,3 +610,4 @@ void acpuclk_set_vdd(unsigned int khz, int vdd)
 	mutex_unlock(&drv_state.lock);
 }
 #endif
+
