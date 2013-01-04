@@ -95,7 +95,6 @@ config IOSCHED_VR
 	  Requests are chosen according to SSTF with a penalty of rev_penalty
 	  for switching head direction.
 
-
 choice
 	prompt "Default I/O scheduler"
 	default DEFAULT_CFQ
@@ -144,6 +143,7 @@ config DEFAULT_IOSCHED
 	default "noop" if DEFAULT_NOOP
 	default "sio" if DEFAULT_SIO  
 	default "vr" if DEFAULT_VR
+	default "sio" if DEFAULT_SIO
 
 
 endmenu
