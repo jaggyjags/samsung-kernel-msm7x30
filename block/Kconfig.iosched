@@ -101,15 +101,17 @@ choice
 		bool "BFQ" if IOSCHED_BFQ=y
 
 	config DEFAULT_NOOP
-		bool "No-op"
+		bool "No-op" if IOSCHED_NOOP=y
 
 
 	config DEFAULT_SIO
-        bool "SIO" if IOSCHED_SIO=y
+		bool "SIO" if IOSCHED_SIO=y
 
 	config DEFAULT_VR
 		bool "V(R)" if IOSCHED_VR=y
 
+	config DEFAULT_SIO
+		bool "SIO" if IOSCHED_SIO=y
 
 endchoice
 
@@ -127,3 +129,5 @@ config DEFAULT_IOSCHED
 endmenu
 
 endif
+
+
