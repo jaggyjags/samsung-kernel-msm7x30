@@ -93,3 +93,4 @@ arch/arm/boot/compressed/vmlinux
 # ignore initramfs
 initramfs
 crea.sh
+creajb.sh
