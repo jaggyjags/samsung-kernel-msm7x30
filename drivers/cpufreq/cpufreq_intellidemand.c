@@ -419,7 +419,7 @@
           Fetching contributors…
 
           <div class="participation">
-            <p class="loader-loading"><img alt="Octocat-spinner-32-eaf2f5" height="16" src="https://a248.e.akamai.net/assets.github.com/images/spinners/octocat-spinner-32-EAF2F5.gif?1338945075" width="16" /></p>
+            <p class="loader-loading"><img alt="Octocat-spinner-32-eaf2f5" height="16" src="https://a248.e.akamai.net/assets.github.com/images/spinners/octocat-spinner-32-EAF2F5.gif?1329920549" width="16" /></p>
             <p class="loader-error">Cannot retrieve contributors at this time</p>
           </div>
         </div>
@@ -2385,7 +2385,7 @@
 </div>
 
 <div id="js-frame-loading-template" class="frame frame-loading large-loading-area" style="display:none;">
-  <img class="js-frame-loading-spinner" src="https://a248.e.akamai.net/assets.github.com/images/spinners/octocat-spinner-128.gif?1347543527" height="64" width="64">
+  <img class="js-frame-loading-spinner" src="https://a248.e.akamai.net/assets.github.com/images/spinners/octocat-spinner-128.gif?1347543532" height="64" width="64">
 </div>
 
 
@@ -2446,7 +2446,7 @@
       <hr class="footer-divider">
 
 
-    <p class="right">&copy; 2013 <span title="0.54320s from fe2.rs.github.com">GitHub</span> Inc. All rights reserved.</p>
+    <p class="right">&copy; 2013 <span title="0.09260s from fe15.rs.github.com">GitHub</span> Inc. All rights reserved.</p>
     <a class="left" href="https://github.com/">
       <span class="mega-icon mega-icon-invertocat"></span>
     </a>
@@ -2843,7 +2843,7 @@ I think you should use an
 
     
     
-    <span id='server_response_time' data-time='0.54464' data-host='fe2'></span>
+    <span id='server_response_time' data-time='0.09373' data-host='fe15'></span>
     
   </body>
 </html>
