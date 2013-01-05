@@ -1194,7 +1194,7 @@ static unsigned int nr_run_thresholds[] = {
 static unsigned int nr_run_hysteresis = 8;  /* 0.5 thread */
 static unsigned int nr_run_last;
 
-#if 1
+#if 0
 static unsigned int calculate_thread_stats (void)
 {
 	unsigned int avg_nr_run = avg_nr_running();
