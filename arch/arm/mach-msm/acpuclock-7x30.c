@@ -56,7 +56,7 @@
 #define SEMC_ACPU_MAX_UV_MV 1450U
 
 extern int charging_boot;
-#define LPM_LOW_CPU_CLK 245760
+#define LPM_LOW_CPU_CLK 1209600
 
 struct clock_state {
 	struct clkctl_acpu_speed	*current_speed;
@@ -101,7 +101,9 @@ static struct pll pll2_tbl[] = {
 	{83, 1, 3, 0 },		/* 1612 MHz */
 	{88, 1, 3, 0 },		/* 1708 MHz */
 	{93, 1, 3, 0 },		/* 1804 MHz */
-/*	{98, 1, 3, 0 },     /  1881 MHz */
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_OVERCLOCKING
+	{97, 1, 3, 0 },     /* 1862 MHz */
+#endif
 };
 
 /* Use negative numbers for sources that can't be enabled/disabled */
@@ -130,7 +132,7 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 0, 24576,  LPXO,	   0, 0,  30720000,  750, VDD_RAW(750) },
 	{ 0, 61440,  PLL_3,    5, 11, 61440000,  750, VDD_RAW(750) },
 	{ 0, 122880, PLL_3,    5, 5,  61440000,  750, VDD_RAW(750) },
-	{ 1, 184320, PLL_3,    5, 4,  61440000,  750, VDD_RAW(750) },
+	{ 0, 184320, PLL_3,    5, 4,  61440000,  750, VDD_RAW(750) },
 	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  750, VDD_RAW(750) },
 	{ 1, 245760, PLL_3,    5, 2,  61440000,  750, VDD_RAW(750) },
 	{ 1, 368640, PLL_3,    5, 1,  122800000, 800, VDD_RAW(800) },
@@ -150,7 +152,9 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[7]},
 	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[8]},
 	{ 1, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
-	//{ 1, 1881600, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_OVERCLOCKING
+	{ 1, 1862400, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#endif
 #endif
 	{ 0 }
 };
@@ -160,7 +164,7 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 0, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
 	{ 0, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
 	{ 0, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
-	{ 1, 184320, PLL_3,    5, 4,  61440000,  800, VDD_RAW(800) },
+	{ 0, 184320, PLL_3,    5, 4,  61440000,  800, VDD_RAW(800) },
 	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  800, VDD_RAW(800) },
 	{ 1, 245760, PLL_3,    5, 2,  61440000,  800, VDD_RAW(800) },
 	{ 1, 368640, PLL_3,    5, 1,  122800000, 850, VDD_RAW(850) },
@@ -180,7 +184,9 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1275, VDD_RAW(1275), &pll2_tbl[7]},
 	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1300, VDD_RAW(1300), &pll2_tbl[8]},
 	{ 1, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
-	//{ 1, 1881600, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#ifdef CONFIG_MSM_CPU_FREQ_EXTREME_OVERCLOCKING
+	{ 1, 1862400, PLL_2, 3, 0, UINT_MAX, 1350, VDD_RAW(1350), &pll2_tbl[10]},
+#endif
 #endif
 	{ 0 }
 };
