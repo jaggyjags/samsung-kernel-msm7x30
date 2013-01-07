@@ -75,7 +75,7 @@ static spinlock_t down_cpumask_lock;
 /*
  * The minimum amount of time to spend at a frequency before we can step up.
  */
-#define DEFAULT_UP_SAMPLE_TIME 20000
+#define DEFAULT_UP_SAMPLE_TIME 18000
 static unsigned long up_sample_time;
 
 #define DEFAULT_UP_SAMPLE_TIME_SLEEP 50000
@@ -84,7 +84,7 @@ static unsigned long up_sample_time_awake;
 /*
  * The minimum amount of time to spend at a frequency before we can step down.
  */
-#define DEFAULT_DOWN_SAMPLE_TIME 40000
+#define DEFAULT_DOWN_SAMPLE_TIME 55000
 static unsigned long down_sample_time;
 
 #define DEFAULT_DOWN_SAMPLE_TIME_SLEEP 40000
@@ -106,7 +106,7 @@ enum {
 /*
  * CPU freq will be increased if measured load > inc_cpu_load;
  */
-#define DEFAULT_INC_CPU_LOAD 70
+#define DEFAULT_INC_CPU_LOAD 65
 static unsigned long inc_cpu_load;
 
 #define DEFAULT_INC_CPU_LOAD_SLEEP 95
@@ -257,10 +257,10 @@ static inline void fix_screen_off_min_step(struct cpufreq_lulzactive_cpuinfo *pc
 	}
     
 	if (DEFAULT_SCREEN_OFF_MIN_STEP == screen_off_min_step) 
-		screen_off_min_step = pcpu->freq_table_size - 4;
+		screen_off_min_step = pcpu->freq_table_size - 5;
     
 	if (screen_off_min_step >= pcpu->freq_table_size)
-		screen_off_min_step = pcpu->freq_table_size - 4;
+		screen_off_min_step = pcpu->freq_table_size - 5;
 }
 
 static inline unsigned int adjust_screen_off_freq(
@@ -1209,3 +1209,4 @@ module_exit(cpufreq_lulzactive_exit);
 MODULE_AUTHOR("Tegrak <luciferanna@gmail.com>");
 MODULE_DESCRIPTION("'lulzactive' - improved interactive governor inspired by smartass");
 MODULE_LICENSE("GPL");
+
