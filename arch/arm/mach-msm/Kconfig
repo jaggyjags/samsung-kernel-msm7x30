@@ -2204,3 +2204,9 @@ config MSM_CACHE_DUMP_ON_PANIC
 	  If unsure, say N
 
 endif
+
+config FORCE_FAST_CHARGE
+  bool "Force AC charge mode at will"
+  default y	
+
+
