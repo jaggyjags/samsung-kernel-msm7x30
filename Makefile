@@ -374,7 +374,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -floop-interchange -floop-strip-mine -floop-block \
 		   -mno-unaligned-access \
-                   -march=armv7-a -mfpu=neon \
 		   -fno-delete-null-pointer-checks
 		   -march=armv7-a -mtune=cortex-a8 -mfpu=neon \
 KBUILD_AFLAGS_KERNEL :=
