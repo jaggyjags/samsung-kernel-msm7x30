@@ -57,6 +57,7 @@ extern int charging_boot;
 #include <linux/gpio.h>
 #include <linux/mfd/pmic8058.h>
 #include <linux/wakelock.h>
+#include <linux/fastchg.h>
 
 #ifdef CONFIG_WIRELESS_CHARGING
 #define IRQ_WC_DETECT PM8058_GPIO_IRQ(PMIC8058_IRQ_BASE, (PM8058_GPIO(35)))
@@ -64,6 +65,7 @@ extern int charging_boot;
 #endif
 
 static struct wake_lock vbus_wake_lock;
+
 
 
 #ifdef DEBUG
@@ -1135,7 +1137,7 @@ static int msm_batt_average_temperature(int temp_adc)
 		return 0;
 
 	if (count == 0 && temp_adc == 150)
-		return 0;	// hanapark: 부팅 초기 vbatt task 초기화 이전 값은 무시하도록 방어 코드 추가 
+		return 0;	// hanapark: \BA\CE\C6\C3 \C3珂\E2 vbatt task \C3珂\E2화 \C0\CC\C0\FC \B0\AA\C0\BA \B9\AB\BD\C3\C7溝\B5\B7\CF \B9\E6\BE\EE \C4湄\E5 \C3煞\A1 
 
 #ifdef __BATT_TEST_DEVICE__
 		if (temp_test_adc)
@@ -1949,12 +1951,27 @@ static void msm_batt_cable_status_update(void)
 
 	if (charger_type != CHARGER_TYPE_NONE)	// USB, TA, Wireless
 	{
-		if (charger_type == CHARGER_TYPE_USB_PC)
+	if ((charger_type == CHARGER_TYPE_USB_PC) || (charger_type == CHARGER_TYPE_USB_CARKIT))
 		{
+			#ifdef CONFIG_FORCE_FAST_CHARGE
+			if (force_fast_charge != 0) {
+				pr_info("cable USB forced fast charge");
+				msm_batt_info.charging_source = AC_CHG;
+				hsusb_chg_connected_ext(USB_CHG_TYPE__WALLCHARGER);
+				power_supply_changed(&msm_psy_ac);
+			} else {
+				pr_info("cable USB");
+				msm_batt_info.charging_source = USB_CHG;
+				hsusb_chg_connected_ext(USB_CHG_TYPE__SDP);
+				power_supply_changed(&msm_psy_usb);
+			}
+			#else
 			msm_batt_info.charging_source = USB_CHG;
 			hsusb_chg_connected_ext(USB_CHG_TYPE__SDP);
 			power_supply_changed(&msm_psy_usb);
+			#endif
 		}
+
 		else	// TA and Wireless
 		{
 			msm_batt_info.charging_source = AC_CHG;
