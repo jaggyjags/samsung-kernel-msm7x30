@@ -48,9 +48,6 @@
 #define USB_FASTCHG_LOAD 1000 /* uA */
 #endif
 
-bool fast_charge = false;
-module_param(fast_charge, bool, 0775);
-
 #define MSM_USB_BASE	(motg->regs)
 #define DRIVER_NAME	"msm_otg"
 
@@ -905,9 +902,6 @@ static void msm_otg_notify_charger(struct msm_otg *motg, unsigned mA)
 		pr_info("USB fast charging is OFF.\n");
 	}
 #endif
-
-	if (fast_charge)
-		mA = 1000
 
 	dev_info(motg->otg.dev, "Avail curr from USB = %u\n", mA);
 	pm8921_charger_vbus_draw(mA);
