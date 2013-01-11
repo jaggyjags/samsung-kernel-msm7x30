@@ -46,6 +46,11 @@
 #include <linux/uaccess.h>
 #include <linux/wakelock.h>
 
+#ifdef CONFIG_FORCE_FAST_CHARGE
+#include <linux/fastchg.h>
+#endif
+
+
 static const char driver_name[] = "msm72k_udc";
 
 /* #define DEBUG */
@@ -289,12 +294,18 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 }
 
 static inline enum chg_type usb_get_chg_type(struct usb_info *ui)
+
 {
-	if ((readl(USB_PORTSC) & PORTSC_LS) == PORTSC_LS)
-		return USB_CHG_TYPE__WALLCHARGER;
-	else
-		return USB_CHG_TYPE__SDP;
-}
+	#ifdef CONFIG_FORCE_FAST_CHARGE
+	if ((readl(USB_PORTSC) & PORTSC_LS) == PORTSC_LS || force_fast_charge == 1) {
+	#else
+	if ((readl(USB_PORTSC) & PORTSC_LS) == PORTSC_LS) {
+	#endif
+	return USB_CHG_TYPE__WALLCHARGER;
+	} else {
+	return USB_CHG_TYPE__SDP;
+	}
+	}
 
 #define USB_WALLCHARGER_CHG_CURRENT 1800
 static int usb_get_max_power(struct usb_info *ui)
