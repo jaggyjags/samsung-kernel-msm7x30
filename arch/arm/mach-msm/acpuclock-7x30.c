@@ -51,7 +51,7 @@
 /* mv = (750mV + (raw * 25mV)) * (2 - VREF_SEL) */
 #define VDD_RAW(mv) (((MV(mv) / V_STEP) - 30) | VREG_DATA)
 
-#define MAX_AXI_KHZ 192000
+#define MAX_AXI_KHZ 122880
 #define SEMC_ACPU_MIN_UV_MV 750U
 #define SEMC_ACPU_MAX_UV_MV 1450U
 
@@ -133,7 +133,7 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 0, 61440,  PLL_3,    5, 11, 61440000,  750, VDD_RAW(750) },
 	{ 0, 122880, PLL_3,    5, 5,  61440000,  750, VDD_RAW(750) },
 	{ 0, 184320, PLL_3,    5, 4,  61440000,  750, VDD_RAW(750) },
-	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  750, VDD_RAW(750) },
+	{ 1, 192000, PLL_3,    5, 3,  61440000,  750, VDD_RAW(750) },
 	{ 1, 245760, PLL_3,    5, 2,  61440000,  750, VDD_RAW(750) },
 	{ 1, 368640, PLL_3,    5, 1,  122800000, 800, VDD_RAW(800) },
 	/* AXI has MSMC1 implications. See above. */
@@ -161,14 +161,14 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 #else
 
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-	{ 0, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
-	{ 0, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
-	{ 0, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
+	{ 1, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
+	{ 1, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
+	{ 1, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
 	{ 0, 184320, PLL_3,    5, 4,  61440000,  800, VDD_RAW(800) },
-	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  800, VDD_RAW(800) },
+	{ 1, 192000, PLL_3,    5, 3,  61440000,  800, VDD_RAW(800) },
 	{ 1, 245760, PLL_3,    5, 2,  61440000,  800, VDD_RAW(800) },
 	{ 1, 368640, PLL_3,    5, 1,  122800000, 850, VDD_RAW(850) },
-	{ 1, 568000, PLL_3,    5, 1,  137800000, 925, VDD_RAW(925) },
+	{ 1, 568000, PLL_3,    5, 1,  137800000, 900, VDD_RAW(900) },
 	/* AXI has MSMC1 implications. See above. */
 	{ 1, 768000, PLL_1,    2, 0,  153600000, 1000, VDD_RAW(1000) },
 	/*
