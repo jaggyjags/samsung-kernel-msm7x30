@@ -51,7 +51,9 @@
 /* mv = (750mV + (raw * 25mV)) * (2 - VREF_SEL) */
 #define VDD_RAW(mv) (((MV(mv) / V_STEP) - 30) | VREG_DATA)
 
-#define MAX_AXI_KHZ 192000
+#define MAX_AXI_KHZ 122880
+#define SEMC_ACPU_MIN_UV_MV 750U
+#define SEMC_ACPU_MAX_UV_MV 1450U
 
 extern int charging_boot;
 #define LPM_LOW_CPU_CLK 1209600
@@ -118,10 +120,6 @@ enum acpuclk_source {
 
 static struct clk *acpuclk_sources[MAX_SOURCE];
 
-
-#define SRC_LPXO (-2)
-#define SRC_AXI  (-1)
-
 /*
  * Each ACPU frequency has a certain minimum MSMC1 voltage requirement
  * that is implicitly met by voting for a specific minimum AXI frequency.
@@ -135,7 +133,7 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 0, 61440,  PLL_3,    5, 11, 61440000,  750, VDD_RAW(750) },
 	{ 0, 122880, PLL_3,    5, 5,  61440000,  750, VDD_RAW(750) },
 	{ 0, 184320, PLL_3,    5, 4,  61440000,  750, VDD_RAW(750) },
-	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  750, VDD_RAW(750) },
+	{ 1, 192000, PLL_3,    5, 3,  61440000,  750, VDD_RAW(750) },
 	{ 1, 245760, PLL_3,    5, 2,  61440000,  750, VDD_RAW(750) },
 	{ 1, 368640, PLL_3,    5, 1,  122800000, 800, VDD_RAW(800) },
 	/* AXI has MSMC1 implications. See above. */
@@ -162,15 +160,15 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 };
 #else
 
-
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-	{ 0, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
-	{ 0, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
-	{ 0, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
+	{ 1, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
+	{ 1, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
+	{ 1, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
 	{ 0, 184320, PLL_3,    5, 4,  61440000,  800, VDD_RAW(800) },
-	{ 1, MAX_AXI_KHZ, AXI, 1, 0,  61440000,  800, VDD_RAW(800) },
+	{ 1, 192000, PLL_3,    5, 3,  61440000,  800, VDD_RAW(800) },
 	{ 1, 245760, PLL_3,    5, 2,  61440000,  800, VDD_RAW(800) },
 	{ 1, 368640, PLL_3,    5, 1,  122800000, 850, VDD_RAW(850) },
+	{ 1, 568000, PLL_3,    5, 1,  137800000, 900, VDD_RAW(900) },
 	/* AXI has MSMC1 implications. See above. */
 	{ 1, 768000, PLL_1,    2, 0,  153600000, 1000, VDD_RAW(1000) },
 	/*
@@ -182,6 +180,7 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 1, 1209600, PLL_2, 3, 0, UINT_MAX, 1150, VDD_RAW(1150), &pll2_tbl[3]},
 	{ 1, 1305600, PLL_2, 3, 0, UINT_MAX, 1175, VDD_RAW(1175), &pll2_tbl[4]},
 	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[5]},
+#ifdef CONFIG_MSM_CPU_FREQ_OVERCLOCKING
 	{ 1, 1516800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[6]},
 	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1275, VDD_RAW(1275), &pll2_tbl[7]},
 	{ 1, 1708800, PLL_2, 3, 0, UINT_MAX, 1300, VDD_RAW(1300), &pll2_tbl[8]},
@@ -195,10 +194,6 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 #endif
 
 
-	{ 0 }
-};
-
-/* Function for Ancora devices */
 #define MAX_CLK 1401600
 unsigned long acpuclk_usr_set_max(void)
 {
@@ -559,17 +554,6 @@ static int __init acpuclk_7x30_init(struct acpuclk_soc_data *soc_data)
 {
 	struct clkctl_acpu_speed *s;
 	
-
-static struct acpuclk_data acpuclk_7x30_data = {
-	.set_rate = acpuclk_7x30_set_rate,
-	.get_rate = acpuclk_7x30_get_rate,
-	.power_collapse_khz = MAX_AXI_KHZ,
-	.wait_for_irq_khz = MAX_AXI_KHZ,
-	.switch_time_us = 50,
-};
-
-static int __init acpuclk_7x30_init(struct acpuclk_soc_data *soc_data)
-{
 	pr_info("%s()\n", __func__);
 
 	mutex_init(&drv_state.lock);
@@ -610,11 +594,30 @@ ssize_t acpuclk_get_vdd_levels_str(char *buf)
 		mutex_unlock(&drv_state.lock);
 	}
 	return len;
-	return 0;
-
 }
 
-struct acpuclk_soc_data acpuclk_7x30_soc_data __initdata = {
-	.init = acpuclk_7x30_init,
-};
+void acpuclk_set_vdd(unsigned int khz, int vdd)
+{
+	int i;
+	unsigned int new_vdd;
+	vdd = vdd / V_STEP * V_STEP;
+	mutex_lock(&drv_state.lock);
+	for (i = 0; acpu_freq_tbl[i].acpu_clk_khz; i++)
+	{
+		if(acpu_freq_tbl[i].use_for_scaling==1)
+		{
+			if (khz == 0)
+				new_vdd = min(max((acpu_freq_tbl[i].vdd_mv + vdd), SEMC_ACPU_MIN_UV_MV), SEMC_ACPU_MAX_UV_MV);
+			else if (acpu_freq_tbl[i].acpu_clk_khz == khz)
+				new_vdd = min(max((unsigned int)vdd, SEMC_ACPU_MIN_UV_MV), SEMC_ACPU_MAX_UV_MV);
+			else continue;
+
+			acpu_freq_tbl[i].vdd_mv = new_vdd;
+			acpu_freq_tbl[i].vdd_raw = VDD_RAW(new_vdd);
+		}
+	}
+	mutex_unlock(&drv_state.lock);
+}
+#endif
+
 
