@@ -809,12 +809,6 @@ struct msm_snapshot_pp_status {
 #define SENSOR_HFR_60FPS_MODE 3
 #define SENSOR_HFR_90FPS_MODE 4
 #define SENSOR_HFR_120FPS_MODE 5
-<<<<<<< HEAD
-
-#define SENSOR_SNAPSHOT_TRANSFER 4
-=======
-#define SENSOR_SNAPSHOT_TRANSFER 6
->>>>>>> parent of 93a7abd... Camera preview working!
 
 #define SENSOR_QTR_SIZE			0
 #define SENSOR_FULL_SIZE		1
@@ -1280,3 +1274,4 @@ struct img_plane_info {
 };
 
 #endif /* __LINUX_MSM_CAMERA_H */
+
