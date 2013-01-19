@@ -1758,6 +1758,7 @@ static int ce147_set_jpeg_quality(void)
     unsigned int minimumCompressionRatio = 0;
     int err;
 
+
 #ifdef CONFIG_ZERO_JPEG_COMPRESSION
 	if (zero_jpeg_compression != 0) {
 		compressionRatio = 100;
