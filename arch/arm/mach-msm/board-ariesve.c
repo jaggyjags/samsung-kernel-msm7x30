@@ -152,7 +152,6 @@ EXPORT_SYMBOL(switch_dev);
 
 #define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE, 4096)
 
-
 /*
  * Reserve space for double buffered full screen
  * res V4L2 video overlay - i.e. 1280x720x1.5x2
@@ -160,8 +159,6 @@ EXPORT_SYMBOL(switch_dev);
 #define MSM_V4L2_VIDEO_OVERLAY_BUF_SIZE 2764800
 #define MSM_PMEM_ADSP_SIZE		0x2D00000
 #define MSM_FLUID_PMEM_ADSP_SIZE	0x2800000
-
-
 #define PMEM_KERNEL_EBI0_SIZE		0x600000
 #define MSM_PMEM_AUDIO_SIZE		0x200000
 
