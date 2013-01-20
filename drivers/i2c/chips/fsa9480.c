@@ -77,7 +77,7 @@ static int fsa9480_probe_done = 0;
 int disable_vbus_flag =0 ;
 #endif
 
-#define _SUPPORT_SAMSUNG_AUTOINSTALLER_
+//#define _SUPPORT_SAMSUNG_AUTOINSTALLER_
 #define dmsg(arg,...) printk("[USB_SWITCH] %s(%d): "arg,__FUNCTION__,__LINE__,##__VA_ARGS__)
 
 #define DRIVER_NAME  "usb_mass_storage"   
@@ -277,11 +277,6 @@ int fsa9480_i2c_tx_data(char* txData, int length)
 {
 	int rc; 
 
-	if (!pclient) {
-		printk(KERN_ERR "[FSA9480]: fsa9480_i2c_tx_data error pclient is NULL pointer\n");
-		return -EINVAL;
-	}
-
 	struct i2c_msg msg[] = {
 		{
 			.addr = pclient->addr,
@@ -290,6 +285,12 @@ int fsa9480_i2c_tx_data(char* txData, int length)
 			.buf = txData,		
 		},
 	};
+
+	if (!pclient) {
+		printk(KERN_ERR "[FSA9480]: fsa9480_i2c_tx_data error pclient is NULL pointer\n");
+		return -EINVAL;
+	}
+	
 
 	rc = i2c_transfer(pclient->adapter, msg, 1);
 	if (rc < 0) {
@@ -321,11 +322,6 @@ static int fsa9480_i2c_rx_data(char* rxData, int length)
 {
 	int rc;
 	
-	if (!pclient) {
-		printk(KERN_ERR "[FSA9480]: fsa9480_i2c_rx_data error pclient is NULL pointer\n");
-		return -EINVAL;
-	}
-	
 	struct i2c_msg msgs[] = {
 		{
 			.addr = pclient->addr,
@@ -340,6 +336,11 @@ static int fsa9480_i2c_rx_data(char* rxData, int length)
 			.buf = rxData,
 		},
 	};
+
+	if (!pclient) {
+		printk(KERN_ERR "[FSA9480]: fsa9480_i2c_rx_data error pclient is NULL pointer\n");
+		return -EINVAL;
+	}
 
 	rc = i2c_transfer(pclient->adapter, msgs, 2);
       
@@ -392,21 +393,21 @@ EXPORT_SYMBOL(fsa9480_select_mode);
 static void fsa9480_chip_init(void)
 {
 	unsigned char cont_reg = 0;
-	int ret;
+	int ret = 0;
 	
 	printk("[FSA9480] fsa9480_chip_init \n");	
 	if (!pclient) 
 		return;
 
-	fsa9480_i2c_write(REGISTER_INTERRUPTMASK1, 0x1ffc);
+	fsa9480_i2c_write(REGISTER_INTERRUPTMASK1, (unsigned char)0x1ffc);
 	if (ret < 0)
 		printk("[FSA9480] %s : REGISTER_INTERRUPTMASK1 err %d\n", __func__, ret);
 
-	fsa9480_i2c_write(REGISTER_CARKITMASK1, 0x07ff);
+	fsa9480_i2c_write(REGISTER_CARKITMASK1, (unsigned char)0x07ff);
 	if (ret < 0)
 		printk("[FSA9480] %s : REGISTER_CARKITMASK1 err %d\n", __func__, ret);
 
-	fsa9480_i2c_write(REGISTER_TIMINGSET1, 0x6);
+	fsa9480_i2c_write(REGISTER_TIMINGSET1, (unsigned char)0x6);
 	if (ret < 0)
 		printk("[FSA9480] %s : REGISTER_TIMINGSET1 err %d\n", __func__, ret);
 	
@@ -550,6 +551,7 @@ static void usb_switch_mode(int mode)
 	}
 }
 
+#if 0
 static int get_current_mode(void)
 {
 	int mode = 0;
@@ -558,6 +560,7 @@ static int get_current_mode(void)
 	
 	return mode;
 }
+#endif
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
 
@@ -576,7 +579,7 @@ static ssize_t usb_switch_show(struct device *dev, struct device_attribute *attr
 	if ((fd = sys_open("/persist/usb_sel.bin", O_RDONLY,0)) < 0){	
 
 	printk("%s :: open failed %s ,fd=0x%x\n",__func__,"/persist/usb_sel.bin",fd);
-	return;
+	return 0;
 	}
 
 	ret = sys_read(fd,buffer,1);
@@ -585,7 +588,7 @@ static ssize_t usb_switch_show(struct device *dev, struct device_attribute *attr
 		if(!power_down) {
 			printk("usb_switch_show READ FAIL!\n");
 		}
-		return;
+		return 0;
 	}	
 
 	sys_close(fd);
@@ -616,9 +619,11 @@ static ssize_t usb_switch_store(
 
 	char buffer[1]={0};
 
+	mm_segment_t fs;
+
 	printk("usb_switch_store ENTRY %s!! \n",buf);
 
-	mm_segment_t fs = get_fs();
+	fs = get_fs();
 	set_fs(get_ds());
 	
 	printk("usb_switch_store ENTRY !! \n");
@@ -647,7 +652,7 @@ static ssize_t usb_switch_store(
 	sys_close(fd); 
 	set_fs(fs);
 
-
+	return 0;
 }
 static DEVICE_ATTR(usb_sel, 0664, usb_switch_show, usb_switch_store);
 
@@ -668,7 +673,7 @@ static ssize_t disable_vbus_store(
 	disable_vbus_flag = 1;	
 	msm_hsusb_set_vbus_state(0);
 
-
+	return 0;
 }
 static DEVICE_ATTR(disable_vbus, 0664, disable_vbus_show, disable_vbus_store);
 #endif
@@ -694,6 +699,7 @@ void uart_switch_mode_select(int mode) {
 }
 EXPORT_SYMBOL(uart_switch_mode_select);
 
+#if 0
 static ssize_t DefaultESNStatus_switch_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     if (g_default_ESN_status) {    
@@ -712,6 +718,8 @@ static ssize_t DefaultESNStatus_switch_store(struct device *dev, struct device_a
     if ((strncmp(buf, "FALSE", 5) == 0) ||(strncmp(buf, "false", 5) == 0)) {
         g_default_ESN_status = 0;
     }
+    
+    return 0;
 }
 
 static DEVICE_ATTR(DefaultESNStatus, S_IRUGO |S_IWUGO | S_IRUSR | S_IWUSR, DefaultESNStatus_switch_show, DefaultESNStatus_switch_store);
@@ -748,6 +756,7 @@ static ssize_t dock_switch_store(struct device *dev, struct device_attribute *at
 }
 
 static DEVICE_ATTR(dock, S_IRUGO |S_IWUGO | S_IRUSR | S_IWUSR, dock_switch_show, dock_switch_store);
+#endif
 
 void usb_switch_state(void)
 {
@@ -1339,7 +1348,7 @@ exit_check_functionality_failed:
 }
 
 	
-static int fsa9480_remove(struct i2c_client *client)
+static int __devexit fsa9480_remove(struct i2c_client *client)
 {
 	struct fsa9480_data *mt;
 
@@ -1350,18 +1359,12 @@ static int fsa9480_remove(struct i2c_client *client)
 	return 0;
 }
 
-
 static const struct i2c_device_id fsa9480_id[] = {
 	{ "fsa9480", 0 },
 	{ }
 };
 
 MODULE_DEVICE_TABLE(i2c, fsa9480_id);
-
-static int fsa9480_suspend(struct i2c_client *client, pm_message_t mesg)
-{
-	return 0;
-}
 
 static int fsa9480_resume(struct i2c_client *client)
 {
@@ -1374,12 +1377,10 @@ static int fsa9480_resume(struct i2c_client *client)
 
 static struct i2c_driver fsa9480_driver = {
 	.probe 		= fsa9480_probe,
-	.remove 	= fsa9480_remove,
-	.suspend	= fsa9480_suspend,
-	.resume	= fsa9480_resume,
-	.shutdown = fsa9480_remove,
+	.remove		= __devexit_p(fsa9480_remove),
+	.resume		= fsa9480_resume,
 	.id_table	= fsa9480_id,
-	.driver = {		
+	.driver = {
 		.name   = "fsa9480",
 	},
 };
