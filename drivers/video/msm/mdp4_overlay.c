@@ -3706,3 +3706,4 @@ int mdp4_update_base_blend(struct msm_fb_data_type *mfd,
 	return ret;
 }
 
+

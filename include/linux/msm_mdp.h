@@ -487,7 +487,7 @@ enum {
 struct mdp_blend_cfg {
 	uint32_t is_premultiplied;
 };
- 
+
 struct msmfb_metadata {
 	uint32_t op;
 	uint32_t flags;
@@ -495,7 +495,6 @@ struct msmfb_metadata {
 		struct mdp_blend_cfg blend_cfg;
 	} data;
 };
-
 struct mdp_page_protection {
 	uint32_t page_protection;
 };

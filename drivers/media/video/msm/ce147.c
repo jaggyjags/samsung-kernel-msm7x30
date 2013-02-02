@@ -1768,6 +1768,7 @@ static int ce147_set_jpeg_quality(void)
 
 	}
 #else
+
 	if(quality >= 91 && quality <= 100) { // 91 ~ 100
 		compressionRatio = 17; // 17%
 	}
@@ -1812,7 +1813,9 @@ static int ce147_set_jpeg_quality(void)
 		printk(KERN_ERR "[CAMDRV/CE147] CE147 :%s: Invalid Quality(%d)\n", __func__, quality);
 		compressionRatio = 8; // 8%
 	}
+
 #endif
+
 
 
 
