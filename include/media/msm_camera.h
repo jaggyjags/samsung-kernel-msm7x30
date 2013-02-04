@@ -1676,4 +1676,3 @@ enum ext_cfg_command_wb
 #endif /* CONFIG_OEM_CAMERA */
 
 #endif /* __LINUX_MSM_CAMERA_H */
-

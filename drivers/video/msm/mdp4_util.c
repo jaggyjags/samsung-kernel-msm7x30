@@ -3294,4 +3294,3 @@ u32 mdp4_get_mixer_num(u32 panel_type)
 	}
 	return mixer_num;
 }
-

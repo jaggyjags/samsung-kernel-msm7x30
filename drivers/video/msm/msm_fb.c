@@ -3153,7 +3153,6 @@ static int msmfb_handle_pp_ioctl(struct msmfb_mdp_pp *pp_ptr)
 
 	return ret;
 }
-
 static int msmfb_handle_metadata_ioctl(struct msm_fb_data_type *mfd,
 				struct msmfb_metadata *metadata_ptr)
 {
@@ -3172,7 +3171,6 @@ static int msmfb_handle_metadata_ioctl(struct msm_fb_data_type *mfd,
 	}
 	return ret;
 }
-
 static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg)
 {
