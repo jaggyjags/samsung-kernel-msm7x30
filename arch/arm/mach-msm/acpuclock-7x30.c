@@ -161,8 +161,8 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 #else
 
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-	{ 1, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
-	{ 1, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
+	{ 0, 24576,  LPXO,	   0, 0,  30720000,  800, VDD_RAW(800) },
+	{ 0, 61440,  PLL_3,    5, 11, 61440000,  800, VDD_RAW(800) },
 	{ 1, 122880, PLL_3,    5, 5,  61440000,  800, VDD_RAW(800) },
 	{ 0, 184320, PLL_3,    5, 4,  61440000,  800, VDD_RAW(800) },
 	{ 1, 192000, PLL_3,    5, 3,  61440000,  800, VDD_RAW(800) },
